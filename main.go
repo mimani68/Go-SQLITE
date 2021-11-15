@@ -29,13 +29,13 @@ func createConnection(dbName string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	//
+	// We most close db session after programm shutdowning
 	// defer db.Close()
 }
 
 func createTable(name string) {
 	sqlStmt := `
-	create table ` + name + ` (id integer not null primary key, data text);
+	create table ` + name + ` (id VARCHAR(100) not null primary key, data TEXT);
 	`
 	_, err := db.Exec(sqlStmt)
 	if err != nil {
@@ -54,12 +54,6 @@ func storeToDb(tName string, data string) {
 		log.Fatal(err)
 	}
 	defer stmt.Close()
-	// for i := 0; i < 100; i++ {
-	// 	_, err = stmt.Exec(i, fmt.Sprintf("text number %03d", i))
-	// 	if err != nil {
-	// 		log.Fatal(err)
-	// 	}
-	// }
 	_, err = stmt.Exec(uuid.New().String(), data)
 	if err != nil {
 		log.Fatal(err)
@@ -67,8 +61,8 @@ func storeToDb(tName string, data string) {
 	tx.Commit()
 }
 
-func readOperationFromDb(tName string) interface{} {
-	var id int
+func readOperationFromDb(tName string) map[string]interface{} {
+	var id string
 	var name string
 	rows, err := db.Query("select id, data from " + tName)
 	if err != nil {
@@ -86,12 +80,9 @@ func readOperationFromDb(tName string) interface{} {
 	if err != nil {
 		log.Fatal(err)
 	}
-	return struct {
-		id   int
-		data string
-	}{
-		id:   id,
-		data: name,
+	return map[string]interface{}{
+		"id":   id,
+		"data": name,
 	}
 }
 
@@ -100,6 +91,8 @@ func main() {
 	createConnection("app")
 	createTable("userSession")
 	storeToDb("userSession", a.(string))
-	fmt.Println(readOperationFromDb("userSession"))
+	b := readOperationFromDb("userSession")
+	fmt.Println(b["id"])
+	fmt.Println(b["data"])
 	defer db.Close()
 }
